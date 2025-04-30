@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 命名空间与对应映射接口的全类名一致 -->
+<mapper namespace="com.cyber.ncre.mapper.StudentMapper">
+	<select id="login" parameterType="String" resultType="Student">
+		select * from students where sxid=#{sxid} and spwd=#{spwd}
+	</select>
+	
+	<select id="getemail" parameterType="String" resultType="String">
+		select semail from students where sxid=${sxid}
+	</select>
+	
+	<update id="updatePassword" parameterType="Student">
+		update students set spwd=#{spwd} where sxid=#{sxid}
+	</update>
+	
+	<select id="getAcademy" resultType="academy">
+		select * from academy
+	</select>
+	
+	<select id="getClasses" resultType="clazz" parameterType="String">
+		select c.* from clazz c inner join academy a on c.acacademyid=a.aid where a.aname=#{aname}
+	</select>
+	
+	<select id="getTest" resultType="Testclas">
+		select * from testclas
+	</select>
+	
+	<insert id="register" parameterType="student" useGeneratedKeys="true" keyProperty="sid">
+		insert into students(sxid, spwd, sname, ssex, semail, sacademy, sclass, remain1, remain2) 
+		values(#{sxid}, #{spwd}, #{sname}, '男', #{semail}, #{sacademy}, #{sclass}, null, null)
+	</insert>
+	
+	<select id="load" parameterType="String" resultType="Student">
+		select * from students where sname=#{sname}
+	</select>
+	<select id="select" parameterType="String" resultType="int">
+		select sid from students where sname=#{sname}
+	</select>
+	<update id="modify">
+		update students set ssex=#{ssex} where sid=#{sid}
+	</update>
+	<insert id="apply" parameterType="Eenrollmsg" useGeneratedKeys="true" keyProperty="eid">
+		insert into enrollmsg(sid, epicture, enation, eidentif, ebirthday, ework, eaddr, ephone, remain1, remain2)
+		values(#{sid}, #{epicture}, #{enation}, #{eidentif}, #{ebirthday}, #{ework}, #{eaddr}, #{ephone}, null, null)
+	</insert>
+	
+	<select id="show" parameterType="int" resultType="Eenrollmsg">
+		select * from enrollmsg where sid=#{sid}
+	</select>
+	<select id="selecteid" parameterType="int" resultType="int">
+		select distinct(eid) from enrollmsg where sid=#{sid}
+	</select>
+	<select id="find" parameterType="String" resultType="int">
+		select teid from testclas where tename=#{tename} order by teid desc limit 1
+	</select>
+	<insert id="apply2" parameterType="Computest" useGeneratedKeys="true" keyProperty="cid">
+		insert into computest(eid, teid, cstatus, cotid, cotclass, cottask)
+		values(#{eid}, #{teid}, '待审核', null, null, null)
+	</insert>
+	<select id="findteid" resultType="int">
+		select teid from computest where eid=#{eid}
+	</select>
+	
+	<select id="selectename" parameterType="int" resultType="String">
+		select tename from testclas where teid=#{teid}
+	</select>
+	
+	<select id="getstuation" parameterType="int" resultType="String">
+		select cstatus from computest where eid=#{eid}
+	</select>
+	
+	
+	<select id="ifbaomin" resultType="CompuTestMsg" parameterType="int">
+		select co.cid, st.sname, en.epicture, st.ssex, st.sclass, en.enation, en.eidentif, en.ephone, 
+		       te.tename, co.cstatus, nl.nocontent 
+		from computest co 
+		left join enrollmsg en on co.eid=en.eid
+		left join students st on en.sid=st.sid
+		left join testclas te on co.teid=te.teid 
+		left join academy ac on st.sacademy=ac.aname
+		left join notThrowLog nl on co.cid=nl.cid
+		where st.sid=#{sid}
+		ORDER BY co.cid DESC
+		LIMIT 1
+	</select>
+	
+	<!-- 获取学生考场信息 -->
+	<select id="getExamRoomInfo" resultType="java.util.HashMap" parameterType="int">
+		SELECT ea.roomName, ea.seatNumber, ea.examDate, ea.examTime 
+		FROM examAssignment ea
+		JOIN computest c ON ea.cid = c.cid
+		JOIN enrollmsg e ON c.eid = e.eid
+		WHERE e.sid = #{sid}
+	</select>
+	
+</mapper>

@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cyber.ncre.mapper.sysAdminMapper">
+
+	<select id="findsysAdmin" parameterType="sysAdmin" resultType="sysAdmin">
+		select * from sysadmin where syname = #{syname} and sypwd = #{sypwd}
+	</select>
+	
+	<resultMap type="academyAdmin" id="academyAdminMap">
+		<id property="acid" column="acid" />
+		<result property="acloginname" column="acloginname" />
+		<result property="acemail" column="acemail" />
+		<result property="acloginpwd" column="acloginpwd" />
+		<result property="acsex" column="acsex" />
+		<result property="acpicture" column="acpicture" />
+		<result property="acwork" column="acwork" />
+		<result property="acacademyid" column="acacademyid" />
+		<result property="acphone" column="acphone" />
+		<result property="actime" column="actime" />
+		<result property="acstatus" column="acstatus" />
+		<association property="academy" javaType="academy">
+			<id property="aid" column="aid" />
+			<result property="aname" column="aname" />
+		</association>
+	</resultMap>
+	
+	<select id="findapply" resultMap="academyAdminMap">
+		select * from academyadmin am inner join academy ac on am.acacademyid=ac.aid and am.acstatus='待审核' order by aid desc
+	</select>
+	
+	<update id="modifyAcstatusPass" parameterType="academyAdmin">
+		update academyadmin set acstatus = '审核通过' where acid = #{acid}
+	</update>
+	
+	<update id="modifyAcstatusNPass" parameterType="academyAdmin">
+		update academyadmin set acstatus = '未通过' where acid = #{acid}
+	</update>
+	
+	
+	<resultMap type="clazz" id="academyMap">
+		<id property="cid" column="cid" />
+		<result property="cname" column="cname" />
+		<result property="acacademyid" column="acacademyid" />
+		<association property="academy" javaType="academy">
+			<id property="aid" column="aid" />
+			<result property="aname" column="aname" />
+		</association>
+	</resultMap>
+	
+	<select id="findacadMsg" resultMap="academyMap">
+		select * from clazz c inner join academy a on c.acacademyid=a.aid order by aid,cid
+	</select>
+	
+	<!-- 按学院名称模糊查询学院和班级 -->
+	<select id="findAcademiesByName" resultMap="academyMap">
+		select * from clazz c inner join academy a on c.acacademyid=a.aid
+		<if test="academyName != null and academyName != ''">
+			where a.aname like CONCAT('%', #{academyName}, '%')
+		</if>
+		order by aid,cid
+	</select>
+	
+	<update id="setacadMsg" parameterType="academy">
+		update academy set aname = #{aname} where aid = #{aid}
+	</update>
+	
+	<update id="setclazzMsg" parameterType="clazz">
+		update clazz set cname = #{cname} where cid = #{cid}
+	</update>
+	
+	<delete id="delclazzMsg" parameterType="clazz">
+		delete from clazz where cid = #{cid}
+	</delete>
+	
+	<select id="selectAcadByName" parameterType="academy" resultType="academy">
+		select * from academy where aname = #{aname}
+	</select>
+	
+	<insert id="addAcademy" parameterType="academy">
+		insert into academy(aname) values(#{aname})
+	</insert>
+	
+	<insert id="addClazz" parameterType="clazz">
+		insert into clazz(cname, acacademyid) values(#{cname},(select max(aid) from academy))
+	</insert>
+			
+	<insert id="addExistClazz" parameterType="clazz">
+		insert into clazz(cname, acacademyid) values(#{cname},#{acacademyid})
+	</insert>
+	
+	<select id="selectClazz" parameterType="clazz" resultType="clazz">
+		select * from clazz where cname=#{cname} and acacademyid=#{acacademyid}
+	</select>
+
+	<select id="getnewMsg" resultType="news">
+		select news_id,news_name,news_text,news_pic,DATE_FORMAT(news_date,'%Y-%m-%d') news_date from news order by news_date desc
+	</select>
+	
+	<delete id="delnewMsg" parameterType="news">
+		delete from news where news_id = #{news_id}
+	</delete>
+	
+	<update id="updatenews" parameterType="news">
+		update news set news_name=#{news_name},news_text=#{news_text}
+		<if test="news_pic!=null and news_pic!=''">,news_pic=#{news_pic}</if>
+		where news_id=#{news_id}
+	</update>
+	
+	<insert id="addnews" parameterType="news">
+		insert into news(news_name, news_text, news_pic, news_date) values(
+		#{news_name},
+		#{news_text},
+		<choose>
+			<when test="news_pic!=null and news_pic!=''">#{news_pic}</when>
+			<otherwise>''</otherwise>
+		</choose>
+		,NOW())
+	</insert>
+	
+	<select id="findkaoMsg" resultType="kaoroom">
+		select * from kaoroom order by krid
+	</select>
+	
+	<update id="modifykaoRoom" parameterType="kaoroom">
+		update kaoroom set krclass = #{krclass},krtotal = #{krtotal},krlou = #{krlou},kraddr = #{kraddr}
+		where krid = #{krid}
+	</update>
+	
+	<delete id="delkaoRoom" parameterType="kaoroom">
+		delete from kaoroom where krid = #{krid}
+	</delete>
+	
+	<insert id="addkaoRoom" parameterType="kaoroom">
+		insert into kaoroom(krclass, krtotal, krlou, kraddr) values(#{krclass},#{krtotal},#{krlou},#{kraddr})
+	</insert>
+	
+	<select id="findbaoMsg" resultType="CompuTestMsg">
+		SELECT DISTINCT
+			co.cid, 
+			st.sname,
+			en.epicture,
+			st.ssex,
+			st.sclass,
+			en.enation,
+			en.eidentif,
+			en.ephone,
+			te.tename,
+			co.cstatus,
+			ea.roomName as examRoom,
+			ea.seatNumber,
+			ea.examDate,
+			ea.examTime,
+			nl.nocontent
+		FROM 
+			(SELECT cid, eid, teid, cstatus FROM computest GROUP BY cid ORDER BY cid DESC) co
+			LEFT JOIN enrollmsg en ON co.eid=en.eid
+			LEFT JOIN students st ON en.sid=st.sid
+			LEFT JOIN testclas te ON co.teid=te.teid 
+			LEFT JOIN academy ac ON st.sacademy=ac.aname
+			LEFT JOIN examAssignment ea ON co.cid=ea.cid
+			LEFT JOIN notThrowLog nl ON co.cid=nl.cid
+	</select>
+   
+   <select id="findnewsById" resultType="news" parameterType="news">
+   		select news_id,news_name,news_text,news_pic,DATE_FORMAT(news_date,'%Y-%m-%d') news_date from news
+   		where news_id = #{news_id}  order by news_date desc
+   </select>
+   
+   <!-- 审核通过学生报名申请 -->
+   <update id="approveStudentApply">
+        update computest set cstatus='审核通过' where cid=#{cid}
+   </update>
+   
+   <!-- 拒绝学生报名申请 -->
+   <update id="rejectStudentApply">
+        update computest set cstatus='未通过' where cid=#{cid}
+   </update>
+   
+   <!-- 添加拒绝原因 -->
+   <insert id="addRejectReason">
+        insert into notThrowLog(cid, nocontent) values(#{cid}, #{reason})
+   </insert>
+   
+   <!-- 为学生分配考场 -->
+   <insert id="assignExamRoom">
+        insert into examAssignment(cid, roomName, seatNumber, examDate, examTime) 
+        values(#{cid}, #{roomName}, #{seatNumber}, #{examDate}, #{examTime})
+        on duplicate key update 
+        roomName=#{roomName}, seatNumber=#{seatNumber}, examDate=#{examDate}, examTime=#{examTime}
+   </insert>
+   
+   <!-- 取消学生考场分配 -->
+   <delete id="removeExamRoom">
+        delete from examAssignment where cid=#{cid}
+   </delete>
+   
+   <!-- 重置学生报名状态为"待审核" -->
+   <update id="resetStudentApplyStatus">
+        update computest set cstatus='待审核' where cid=#{cid}
+   </update>
+   
+   <!-- 直接更新学生报名状态 -->
+   <update id="updateStudentStatus">
+        update computest set cstatus=#{status} where cid=#{cid}
+   </update>
+   
+   <!-- 获取已分配座位数量 -->
+   <select id="countAssignedSeats" resultType="int">
+        SELECT COUNT(*) FROM examAssignment 
+        WHERE roomName = #{roomName}
+        <if test="examDate != null and examDate != ''">
+            AND examDate = #{examDate}
+        </if>
+   </select>
+   
+   <!-- 获取已分配的座位号列表 -->
+   <select id="listAssignedSeats" resultType="string">
+        SELECT seatNumber FROM examAssignment 
+        WHERE roomName = #{roomName}
+        <if test="examDate != null and examDate != ''">
+            AND examDate = #{examDate}
+        </if>
+   </select>
+   
+   <!-- 获取拒绝原因 -->
+   <select id="getRejectReason" resultType="string">
+        SELECT nocontent FROM notThrowLog 
+        WHERE cid = #{cid} 
+        ORDER BY id DESC 
+        LIMIT 1
+   </select>
+</mapper>
